@@ -184,8 +184,6 @@ final class ChangesBuildStepImplementation
   private function buildRawDiff($diff){
     $user = PhabricatorUser::getOmnipotentUser();
 
-
-
     return id(new ConduitCall(
       'differential.getrawdiff',
       array(
