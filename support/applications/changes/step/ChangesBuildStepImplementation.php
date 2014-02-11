@@ -72,9 +72,13 @@ final class ChangesBuildStepImplementation
       ->setViewer(PhabricatorUser::getOmnipotentUser())
       ->withPHIDs(array($object->getAuthorPHID()))
       ->executeOne();
-    $email = $author->loadPrimaryEmailAddress();
 
-    $data['author'] = sprintf('%s <%s>', $author->getRealName(), $email);
+    if ($author) {
+      $email = $author->loadPrimaryEmailAddress();
+
+      $data['author'] = sprintf('%s <%s>', $author->getRealName(), $email);
+    }
+
 
     try {
       if ($data['patch']) {
