@@ -1,5 +1,4 @@
 *.xml
 *.pyc
 *.egg-info
-.arcconfig
 .coverage

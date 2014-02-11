@@ -12,3 +12,8 @@ Setup
 3. Add a build step to fire off a Changes job.
 
 .. note:: Changes relies on the repository URL matching on both sides to determine which builds should fire.
+
+Contributing
+------------
+
+You'll need to ensure ``arc lint`` is run before commiting, which also should implicitly run ``arc liberate``.

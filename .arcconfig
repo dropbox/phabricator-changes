@@ -1,0 +1,5 @@
+{
+  "lint.engine" : "PhutilLintEngine",
+  "unit.engine" : "PhutilUnitTestEngine",
+  "load": ["support/", "../phabricator/src/"]
+}
