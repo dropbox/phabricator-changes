@@ -46,37 +46,20 @@ final class ChangesBuildStepImplementation
 
     if ($object instanceof DifferentialDiff) {
       list($success, $data) = $this->getParamsForDiff($object);
-
-      if (!$success) {
-        $log_body->append($data);
-        $log_body->finalize($start);
-
-        $build->setBuildStatus(HarbormasterBuild::STATUS_FAILED);
-
-        return;
-      }
-
     } else if ($object instanceof PhabricatorRepositoryCommit) {
-      // TODO: we need label/etc yet
-      $data['sha'] = $object->getCommitIdentifier();
-      $data['target'] = $data['sha'];
-      $data['repository'] = (string)$object->getRepository()->getPublicRemoteURI();
+      list($success, $data) = $this->getParamsForCommit($object);
     } else {
-      $log_body->append(sprintf("Unable to create a build for object type (not supported).\n"));
+      $success = false;
+      $data = sprintf("Unable to create a build for object type (not supported).\n");
+    }
+
+    if (!$success) {
+      $log_body->append($data);
+      $log_body->finalize($start);
+
       $build->setBuildStatus(HarbormasterBuild::STATUS_FAILED);
 
       return;
-    }
-
-    $author = id(new PhabricatorPeopleQuery())
-      ->setViewer(PhabricatorUser::getOmnipotentUser())
-      ->withPHIDs(array($object->getAuthorPHID()))
-      ->executeOne();
-
-    if ($author) {
-      $email = $author->loadPrimaryEmailAddress();
-
-      $data['author'] = sprintf('%s <%s>', $author->getRealName(), $email);
     }
 
 
@@ -134,6 +117,34 @@ final class ChangesBuildStepImplementation
     return true;
   }
 
+  private function formatAuthor($author) {
+    $email = $author->loadPrimaryEmailAddress();
+
+    return sprintf('%s <%s>', $author->getRealName(), $email);
+  }
+
+  private function getParamsForCommit($commit) {
+    // TODO: we need label/etc yet
+    $data = array();
+
+    $data['sha'] = $object->getCommitIdentifier();
+    $data['target'] = $data['sha'];
+    $data['repository'] = (string)$object->getRepository()->getPublicRemoteURI();
+
+    $author = id(new PhabricatorPeopleQuery())
+      ->setViewer(PhabricatorUser::getOmnipotentUser())
+      ->withPHIDs(array($object->getAuthorPHID()))
+      ->executeOne();
+
+    // commits *may* be missing an authorPHID if they're committing as an invalid
+    // (or new) author
+    if ($author) {
+      $data['author'] = $this->formatAuthor($author);
+    }
+
+    return $data;
+  }
+
   private function getParamsForDiff($diff) {
     $data = array();
 
@@ -145,6 +156,11 @@ final class ChangesBuildStepImplementation
     $diff->attachArcanistProject($arc_project);
 
     $revision = $diff->getRevision();
+    // TODO(dcramer): we'd like to support revision-less diffs
+    if (!$revision) {
+      return array(false, 'Not attached to a revision');
+    }
+
     $repo = $revision->getRepository();
 
     $data['patch[label]'] = sprintf('D%s', $revision->getID());
@@ -172,6 +188,15 @@ final class ChangesBuildStepImplementation
     }
 
     $data['patch'] = $this->buildRawDiff($diff);
+
+    // fetch author from revision as diff may not match what we
+    // expect
+    $author = id(new PhabricatorPeopleQuery())
+      ->setViewer(PhabricatorUser::getOmnipotentUser())
+      ->withPHIDs(array($revision->getAuthorPHID()))
+      ->executeOne();
+
+    $data['author'] = $this->formatAuthor($author);
 
     return array(true, $data);
   }
