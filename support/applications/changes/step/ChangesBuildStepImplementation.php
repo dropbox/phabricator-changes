@@ -34,12 +34,15 @@ final class ChangesBuildStepImplementation
       return;
     }
 
-    $log_body->append(sprintf("Changes URI is \"%s\"\n", $changes_uri));
+    $log_body->append(sprintf("Changes URI is \"%s\".\n", $changes_uri));
 
     $uri = sprintf('%s/api/0/builds/', rtrim($changes_uri, '/'));
 
     $buildable = $build->getBuildable();
     $object = $buildable->getBuildableObject();
+
+    $log_body->append(sprintf("Identifying build parameters for %s (%s).\n",
+                      get_class($object), $object->getPHID();));
 
     if ($object instanceof DifferentialDiff) {
       list($success, $data) = $this->getParamsForDiff($object);
@@ -58,6 +61,11 @@ final class ChangesBuildStepImplementation
       $data['sha'] = $object->getCommitIdentifier();
       $data['target'] = $data['sha'];
       $data['repository'] = (string)$object->getRepository()->getPublicRemoteURI();
+    } else {
+      $log_body->append(sprintf("Unable to create a build for object type (not supported).\n"));
+      $build->setBuildStatus(HarbormasterBuild::STATUS_FAILED);
+
+      return;
     }
 
     $author = id(new PhabricatorPeopleQuery())
