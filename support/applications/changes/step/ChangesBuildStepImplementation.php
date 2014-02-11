@@ -42,7 +42,7 @@ final class ChangesBuildStepImplementation
     $object = $buildable->getBuildableObject();
 
     $log_body->append(sprintf("Identifying build parameters for %s (%s).\n",
-                      get_class($object), $object->getPHID();));
+                      get_class($object), $object->getPHID()));
 
     if ($object instanceof DifferentialDiff) {
       list($success, $data) = $this->getParamsForDiff($object);
