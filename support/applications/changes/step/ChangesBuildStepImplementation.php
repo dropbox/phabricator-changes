@@ -169,7 +169,7 @@ final class ChangesBuildStepImplementation
     if (!$repo) {
       return array(false, 'Missing repository for diff');
     }
-    $data['repository'] = (string)$repo->getPublicRemoteURI();
+    $data['repository'] = (string)$repo->getPublicCloneURI();
 
     $property = id(new DifferentialDiffProperty())->loadOneWhere(
       'diffID = %d AND name = %s',
