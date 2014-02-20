@@ -130,6 +130,7 @@ final class ChangesBuildStepImplementation
     $data['sha'] = $object->getCommitIdentifier();
     $data['target'] = $data['sha'];
     $data['repository'] = (string)$object->getRepository()->getPublicRemoteURI();
+    $data['message'] = $revision->getSummary();
 
     $author = id(new PhabricatorPeopleQuery())
       ->setViewer(PhabricatorUser::getOmnipotentUser())
@@ -165,8 +166,7 @@ final class ChangesBuildStepImplementation
 
     $data['patch[label]'] = sprintf('D%s', $revision->getID());
     $data['label'] = $revision->getTitle();
-    // TODO(dcramer): we must pass the message
-    $data['message'] = '';
+    $data['message'] = $revision->getSummary();
     $data['target'] = $data['patch[label]'];
     if (!$repo) {
       return array(false, 'Missing repository for diff');
