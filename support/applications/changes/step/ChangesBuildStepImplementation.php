@@ -165,6 +165,8 @@ final class ChangesBuildStepImplementation
 
     $data['patch[label]'] = sprintf('D%s', $revision->getID());
     $data['label'] = $revision->getTitle();
+    // TODO(dcramer): we must pass the message
+    $data['message'] = '';
     $data['target'] = $data['patch[label]'];
     if (!$repo) {
       return array(false, 'Missing repository for diff');
