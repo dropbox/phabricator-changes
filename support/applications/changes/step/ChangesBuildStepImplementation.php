@@ -1,7 +1,7 @@
 <?php
 
 final class ChangesBuildStepImplementation
-  extends BuildStepImplementation {
+  extends HarbormasterBuildStepImplementation {
 
   public function getName() {
     return pht('Create build in Changes');
@@ -111,10 +111,6 @@ final class ChangesBuildStepImplementation
     if ($data['patch']) {
       unlink($patch_file);
     }
-  }
-
-  public function validateSettings() {
-    return true;
   }
 
   private function formatAuthor($author) {
