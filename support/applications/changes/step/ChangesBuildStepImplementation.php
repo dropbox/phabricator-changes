@@ -130,7 +130,7 @@ final class ChangesBuildStepImplementation
     $data['sha'] = $commit->getCommitIdentifier();
     $data['target'] = $data['sha'];
     $data['repository'] = (string)$commit->getRepository()->getPublicCloneURI();
-    $data['message'] = $revision->getSummary();
+    $data['message'] = $commit->getSummary();
 
     $author = id(new PhabricatorPeopleQuery())
       ->setViewer(PhabricatorUser::getOmnipotentUser())
