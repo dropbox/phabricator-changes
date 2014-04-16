@@ -127,14 +127,14 @@ final class ChangesBuildStepImplementation
     // TODO: we need label/etc yet
     $data = array();
 
-    $data['sha'] = $object->getCommitIdentifier();
+    $data['sha'] = $commit->getCommitIdentifier();
     $data['target'] = $data['sha'];
-    $data['repository'] = (string)$object->getRepository()->getPublicRemoteURI();
+    $data['repository'] = (string)$commit->getRepository()->getPublicRemoteURI();
     $data['message'] = $revision->getSummary();
 
     $author = id(new PhabricatorPeopleQuery())
       ->setViewer(PhabricatorUser::getOmnipotentUser())
-      ->withPHIDs(array($object->getAuthorPHID()))
+      ->withPHIDs(array($commit->getAuthorPHID()))
       ->executeOne();
 
     // commits *may* be missing an authorPHID if they're committing as an invalid
