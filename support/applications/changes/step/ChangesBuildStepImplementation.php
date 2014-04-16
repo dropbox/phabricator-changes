@@ -161,14 +161,14 @@ final class ChangesBuildStepImplementation
     }
 
     $repo = $revision->getRepository();
+    if (!$repo) {
+      return array(false, 'Missing repository for diff');
+    }
 
     $data['patch[label]'] = sprintf('D%s', $revision->getID());
     $data['label'] = $revision->getTitle();
     $data['message'] = $revision->getSummary();
     $data['target'] = $data['patch[label]'];
-    if (!$repo) {
-      return array(false, 'Missing repository for diff');
-    }
     $data['repository'] = (string)$repo->getPublicCloneURI();
 
     $property = id(new DifferentialDiffProperty())->loadOneWhere(
