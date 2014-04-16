@@ -48,8 +48,8 @@ final class ChangesBuildStepImplementation
 
     if ($object instanceof DifferentialDiff) {
       list($success, $data) = $this->getParamsForDiff($object);
-    } else if ($object instanceof PhabricatorRepositoryCommit) {
-      list($success, $data) = $this->getParamsForCommit($object);
+    // } else if ($object instanceof PhabricatorRepositoryCommit) {
+    //   list($success, $data) = $this->getParamsForCommit($object);
     } else {
       $success = false;
       $data = sprintf("Unable to create a build for object type (not supported).\n");
