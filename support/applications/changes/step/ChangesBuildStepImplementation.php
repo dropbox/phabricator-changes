@@ -143,7 +143,7 @@ final class ChangesBuildStepImplementation
       $data['author'] = $this->formatAuthor($author);
     }
 
-    return $data;
+    return array(true, $data);
   }
 
   private function getParamsForDiff($diff) {
