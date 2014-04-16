@@ -146,7 +146,9 @@ final class ChangesBuildStepImplementation
     $data = array();
 
     // arc project is required by diff builder
-    $arc_project = $diff->loadArcanistProject();
+    $arc_project = id(new PhabricatorRepositoryArcanistProject())->loadOneWhere(
+      'phid = %s',
+      $diff->getArcanistProjectPHID());
     if (!$arc_project) {
       return array(false, 'Missing arcanist project');
     }
