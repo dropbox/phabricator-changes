@@ -31,6 +31,8 @@ final class ChangesBuildStepImplementation
       $log_body->finalize($start);
 
       $build->setBuildStatus(HarbormasterBuild::STATUS_FAILED);
+      $build->save();
+
       return;
     }
 
@@ -58,6 +60,7 @@ final class ChangesBuildStepImplementation
       $log_body->finalize($start);
 
       $build->setBuildStatus(HarbormasterBuild::STATUS_FAILED);
+      $build->save();
 
       return;
     }
@@ -100,6 +103,7 @@ final class ChangesBuildStepImplementation
 
       if ($status != 200) {
         $build->setBuildStatus(HarbormasterBuild::STATUS_FAILED);
+        $build->save();
       }
     } catch (Exception $ex) {
       if ($data['patch']) {
