@@ -18,7 +18,7 @@ phutil_register_library_map(array(
   ),
   'xmap' =>
   array(
-    'ChangesBuildStepImplementation' => 'BuildStepImplementation',
+    'ChangesBuildStepImplementation' => 'HarbormasterBuildStepImplementation',
     'ChangesConfigOptions' => 'PhabricatorApplicationConfigOptions',
   ),
 ));

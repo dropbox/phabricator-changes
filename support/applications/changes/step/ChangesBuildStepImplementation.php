@@ -170,11 +170,15 @@ final class ChangesBuildStepImplementation
       return array(false, 'Missing repository for diff');
     }
 
-    $data['patch[label]'] = sprintf('D%s', $revision->getID());
+    $data['target'] = sprintf('D%s', $revision->getID());
     $data['label'] = $revision->getTitle();
     $data['message'] = $revision->getSummary();
-    $data['target'] = $data['patch[label]'];
     $data['repository'] = (string)$repo->getPublicCloneURI();
+    $data['patch[data]'] = json_encode(array(
+      'diffID' => $diff->getID(),
+      'revisionID' => $revision->getID(),
+      'url' => PhabricatorEnv::getProductionURI('/'.$revision->getMonogram()),
+    ));
 
     $property = id(new DifferentialDiffProperty())->loadOneWhere(
       'diffID = %d AND name = %s',
