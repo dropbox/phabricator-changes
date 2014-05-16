@@ -47,7 +47,7 @@ final class ChangesBuildStepImplementation
                       get_class($object), $object->getPHID()));
 
     if ($object instanceof DifferentialDiff) {
-      list($success, $data) = $this->getParamsForDiff($object);
+      list($success, $data) = $this->getParamsForDiff($build_target, $object);
     // } else if ($object instanceof PhabricatorRepositoryCommit) {
     //   list($success, $data) = $this->getParamsForCommit($object);
     } else {
@@ -147,7 +147,7 @@ final class ChangesBuildStepImplementation
     return array(true, $data);
   }
 
-  private function getParamsForDiff($diff) {
+  private function getParamsForDiff($build_target, $diff) {
     $data = array();
 
     // arc project is required by diff builder
@@ -177,6 +177,7 @@ final class ChangesBuildStepImplementation
     $data['patch[data]'] = json_encode(array(
       'diffID' => $diff->getID(),
       'revisionID' => $revision->getID(),
+      'buildTargetPHID' => $build_target->getPHID(),
       'url' => PhabricatorEnv::getProductionURI('/'.$revision->getMonogram()),
     ));
 
