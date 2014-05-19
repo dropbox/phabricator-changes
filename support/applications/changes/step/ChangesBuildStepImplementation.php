@@ -17,6 +17,17 @@ final class ChangesBuildStepImplementation
     return pht('Create a new build in Changes');
   }
 
+  public function getFieldSpecifications() {
+    return array(
+      'wait_results' => array(
+        'name' => pht('Wait for results'),
+        'type' => 'bool',
+        'required' => false,
+        'caption' => pht('Expect the build server to report the result.'),
+      ),
+    );
+  }
+
   public function execute(
     HarbormasterBuild $build,
     HarbormasterBuildTarget $build_target) {
@@ -239,5 +250,10 @@ final class ChangesBuildStepImplementation
     ))
     ->setUser($user)
     ->execute();
+  }
+
+  public function shouldWaitForMessage(HarbormasterBuildTarget $target) {
+    $settings = $this->getSettings();
+    return (bool)$settings['wait_results'];
   }
 }
