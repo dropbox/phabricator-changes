@@ -125,6 +125,8 @@ final class ChangesBuildHelper {
       return array(false, 'Missing repository for diff');
     }
 
+    $buildTargetPHID = ($build_target ? $build_target->getPHID() : null);
+
     $data['target'] = sprintf('D%s', $revision->getID());
     $data['label'] = $revision->getTitle();
     $data['message'] = $revision->getSummary();
@@ -132,7 +134,7 @@ final class ChangesBuildHelper {
     $data['patch[data]'] = json_encode(array(
       'diffID' => $diff->getID(),
       'revisionID' => $revision->getID(),
-      'buildTargetPHID' => $build_target->getPHID(),
+      'buildTargetPHID' => $buildTargetPHID,
       'url' => PhabricatorEnv::getProductionURI('/'.$revision->getMonogram()),
     ));
 
