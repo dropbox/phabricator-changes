@@ -5,7 +5,7 @@ final class ChangesBuildHelper {
     $changes_uri = PhabricatorEnv::getEnvConfigIfExists('changes.uri');
 
     if (!$changes_uri) {
-      return false;
+      return array(false, 'Missing changes.uri setting');
     }
 
     $uri = sprintf('%s/api/0/builds/', rtrim($changes_uri, '/'));
@@ -36,7 +36,7 @@ final class ChangesBuildHelper {
       list($success, $result) = $this->sendBuildToChanges($uri, $data);
 
       if ($success != 200) {
-        return false;
+        return array(false, $result);
       }
     } catch (Exception $ex) {
       if ($data['patch']) {
