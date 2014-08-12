@@ -36,7 +36,7 @@ class ChangesBuildHelper {
         $data['patch'] = '@'.$patch_file;
       }
 
-      $success = $this->sendBuildToChanges($uri, $data)
+      $success = $this->sendBuildToChanges($uri, $data);
 
       if ($success != 200) {
         return false;
@@ -73,7 +73,7 @@ class ChangesBuildHelper {
     $body = curl_exec($curl);
     $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     // $result = json_decode($body, true);
-    $success = $status == 200
+    $success = $status == 200;
 
     return $success;
   }
@@ -198,3 +198,4 @@ class ChangesBuildHelper {
     ->setUser($user)
     ->execute();
   }
+}
