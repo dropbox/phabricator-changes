@@ -86,11 +86,17 @@ class ChangesBuildHelper {
 
   private function getParamsForCommit($commit) {
     // TODO: we need label/etc yet
+    $repo = $commit->getRepository();
+
+    if (!$repo) {
+      return array(false, 'Missing repository for commit');
+    }
+
     $data = array();
 
     $data['sha'] = $commit->getCommitIdentifier();
     $data['target'] = $data['sha'];
-    $data['repository'] = (string)$commit->getRepository()->getPublicCloneURI();
+    $data['repository[phabricator.callsign'] = $repo->getCallsign();
     $data['message'] = $commit->getSummary();
     $data['patch'] = null;
 
@@ -111,15 +117,6 @@ class ChangesBuildHelper {
   private function getParamsForDiff($build_target, $diff) {
     $data = array();
 
-    // arc project is required by diff builder
-    $arc_project = id(new PhabricatorRepositoryArcanistProject())->loadOneWhere(
-      'phid = %s',
-      $diff->getArcanistProjectPHID());
-    if (!$arc_project) {
-      return array(false, 'Missing arcanist project');
-    }
-    $diff->attachArcanistProject($arc_project);
-
     $revision = $diff->getRevision();
     // TODO(dcramer): we'd like to support revision-less diffs
     if (!$revision) {
@@ -134,7 +131,7 @@ class ChangesBuildHelper {
     $data['target'] = sprintf('D%s', $revision->getID());
     $data['label'] = $revision->getTitle();
     $data['message'] = $revision->getSummary();
-    $data['repository'] = (string)$repo->getPublicCloneURI();
+    $data['repository[phabricator.callsign'] = $repo->getCallsign();
     $data['patch[data]'] = json_encode(array(
       'diffID' => $diff->getID(),
       'revisionID' => $revision->getID(),
