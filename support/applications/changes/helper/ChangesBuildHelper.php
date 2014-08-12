@@ -19,7 +19,7 @@ final class ChangesBuildHelper {
     }
 
     if (!$success) {
-      return false;
+      return array(false, $data);
     }
 
     try {
@@ -33,7 +33,7 @@ final class ChangesBuildHelper {
         $data['patch'] = '@'.$patch_file;
       }
 
-      $success = $this->sendBuildToChanges($uri, $data);
+      list($success, $result) = $this->sendBuildToChanges($uri, $data);
 
       if ($success != 200) {
         return false;
@@ -49,7 +49,7 @@ final class ChangesBuildHelper {
       unlink($patch_file);
     }
 
-    return true;
+    return array(true, $result);
   }
 
   private function sendBuildToChanges($uri, $data) {
@@ -69,10 +69,10 @@ final class ChangesBuildHelper {
 
     $body = curl_exec($curl);
     $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    // $result = json_decode($body, true);
-    $success = $status == 200;
+    $result = json_decode($body, true);
+    $success = $status === 200;
 
-    return $success;
+    return array($success, $result);
   }
 
   private function formatAuthor($author) {

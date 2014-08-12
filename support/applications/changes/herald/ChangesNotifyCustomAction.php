@@ -35,10 +35,16 @@ final class ChangesNotifyCustomAction extends HeraldCustomAction {
     $revision_id = $revision->getID();
     $diff_id = $diff->getID();
 
-    $helper = new ChangesBuildHelper();
-    $result = $helper->executeBuild($diff);
+    $diff->attachRevision($revision);
 
-    phlog("Build D{$revision_id} / diff {$diff_id}.");
+    $helper = new ChangesBuildHelper();
+    list($result, $data) = $helper->executeBuild($diff);
+
+    if ($result === false) {
+      phlog("[Failed] Create build in Changes for diff {$diff_id}: {$data}");
+    } else {
+      phlog("[Success] Create build in Changes for diff {$diff_id}: {$data}");
+    }
 
     return new HeraldApplyTranscript(
       $effect,
