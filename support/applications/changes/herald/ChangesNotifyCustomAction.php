@@ -19,7 +19,7 @@ final class ChangesNotifyCustomAction extends HeraldCustomAction {
   }
 
   public function getActionType() {
-    return HeraldAdapater::VALUE_NONE;
+    return HeraldAdapter::VALUE_NONE;
   }
 
   public function applyEffect(
