@@ -1,7 +1,7 @@
 <?php
 
-class ChangesBuildHelper {
-  public function executeBuild($object) {
+final class ChangesBuildHelper {
+  public function executeBuild($object, $build_target=null) {
     $changes_uri = PhabricatorEnv::getEnvConfigIfExists('changes.uri');
 
     if (!$changes_uri) {
@@ -10,11 +10,8 @@ class ChangesBuildHelper {
 
     $uri = sprintf('%s/api/0/builds/', rtrim($changes_uri, '/'));
 
-    $buildable = $build->getBuildable();
-    $object = $buildable->getBuildableObject();
-
     if ($object instanceof DifferentialDiff) {
-      list($success, $data) = $this->getParamsForDiff($build_target, $object);
+      list($success, $data) = $this->getParamsForDiff($object, $build_target);
     // } else if ($object instanceof PhabricatorRepositoryCommit) {
     //   list($success, $data) = $this->getParamsForCommit($object);
     } else {
@@ -114,7 +111,7 @@ class ChangesBuildHelper {
     return array(true, $data);
   }
 
-  private function getParamsForDiff($build_target, $diff) {
+  private function getParamsForDiff($diff, $build_target=null) {
     $data = array();
 
     $revision = $diff->getRevision();

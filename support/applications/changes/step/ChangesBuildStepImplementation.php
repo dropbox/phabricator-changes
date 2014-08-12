@@ -36,7 +36,7 @@ final class ChangesBuildStepImplementation
     $object = $buildable->getBuildableObject();
 
     $helper = new ChangesBuildHelper();
-    $result = $helper->executeBuild($object);
+    $result = $helper->executeBuild($object, $build_target);
 
     if ($result === false) {
       $build->setBuildStatus(HarbormasterBuild::STATUS_FAILED);
