@@ -1,5 +1,5 @@
 {
-  "lint.engine" : "PhutilLintEngine",
-  "unit.engine" : "PhutilUnitTestEngine",
-  "load": ["support/", "../phabricator/src/"]
+  "project.name": "phabricator-changes",
+  "unit.engine": "PhutilUnitTestEngine",
+  "load": ["support/", "../phabricator/src/", "../libphutil/src/", "../arcanist/src/"]
 }
