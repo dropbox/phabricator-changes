@@ -40,6 +40,8 @@ final class ChangesNotifyCustomAction extends HeraldCustomAction {
     $helper = new ChangesBuildHelper();
     list($success, $result) = $helper->executeBuild($diff);
 
+    $result = print_r($result, true);
+
     if ($success === false) {
       phlog("[Failed] Create build in Changes for diff {$diff_id}: {$result}");
     } else {
