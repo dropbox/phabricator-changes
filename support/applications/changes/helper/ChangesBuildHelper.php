@@ -125,7 +125,7 @@ final class ChangesBuildHelper {
     $data['target'] = sprintf('D%s', $revision->getID());
     $data['label'] = $revision->getTitle();
     $data['message'] = $revision->getSummary();
-    $data['repository[phabricator.callsign'] = $repo->getCallsign();
+    $data['repository[phabricator.callsign]'] = $repo->getCallsign();
     $data['patch[data]'] = json_encode(array(
       'diffID' => $diff->getID(),
       'revisionID' => $revision->getID(),
