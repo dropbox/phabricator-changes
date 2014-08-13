@@ -45,7 +45,7 @@ final class ChangesNotifyCustomAction extends HeraldCustomAction {
     if ($success === false) {
       phlog("[Failed] Create build in Changes for diff {$diff_id}: {$result}");
     } else {
-      phlog("[Success] Create build in Changes for diff {$diff_id}: {$result}");
+      phlog("[Success] Created ".count($result)." build(s) in Changes for diff {$diff_id}");
     }
 
     return new HeraldApplyTranscript(
