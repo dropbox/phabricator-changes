@@ -8,7 +8,7 @@ final class ChangesBuildHelper {
       return array(false, 'Missing changes.uri setting');
     }
 
-    $uri = sprintf('%s/api/0/builds/', rtrim($changes_uri, '/'));
+    $uri = sprintf('%s/api/0/phabricator/notify-diff/', rtrim($changes_uri, '/'));
 
     if ($object instanceof DifferentialDiff) {
       list($success, $data) = $this->getParamsForDiff($object, $build_target);
@@ -64,10 +64,11 @@ final class ChangesBuildHelper {
 
     $body = curl_exec($curl);
     $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    $result = json_decode($body, true);
-    $success = $status === 200;
 
-    return array($success, $result);
+    if ($status === 200) {
+        return array(true, json_decode($body, true));
+    }
+    return array(false, "$status: $body");
   }
 
   private function formatAuthor($author) {
@@ -77,33 +78,7 @@ final class ChangesBuildHelper {
   }
 
   private function getParamsForCommit($commit) {
-    // TODO: we need label/etc yet
-    $repo = $commit->getRepository();
-
-    if (!$repo) {
-      return array(false, 'Missing repository for commit');
-    }
-
-    $data = array();
-
-    $data['sha'] = $commit->getCommitIdentifier();
-    $data['target'] = $data['sha'];
-    $data['repository[phabricator.callsign'] = $repo->getCallsign();
-    $data['message'] = $commit->getSummary();
-    $data['patch'] = null;
-
-    $author = id(new PhabricatorPeopleQuery())
-      ->setViewer(PhabricatorUser::getOmnipotentUser())
-      ->withPHIDs(array($commit->getAuthorPHID()))
-      ->executeOne();
-
-    // commits *may* be missing an authorPHID if they're committing as an invalid
-    // (or new) author
-    if ($author) {
-      $data['author'] = $this->formatAuthor($author);
-    }
-
-    return array(true, $data);
+    return array(false, 'Commits are not currently supported');
   }
 
   private function getParamsForDiff($diff, $build_target=null) {
@@ -122,16 +97,14 @@ final class ChangesBuildHelper {
 
     $buildTargetPHID = ($build_target ? $build_target->getPHID() : null);
 
-    $data['target'] = sprintf('D%s', $revision->getID());
     $data['label'] = $revision->getTitle();
     $data['message'] = $revision->getSummary();
-    $data['repository[phabricator.callsign]'] = $repo->getCallsign();
-    $data['patch[data]'] = json_encode(array(
-      'diffID' => $diff->getID(),
-      'revisionID' => $revision->getID(),
-      'buildTargetPHID' => $buildTargetPHID,
-      'url' => PhabricatorEnv::getProductionURI('/'.$revision->getMonogram()),
-    ));
+
+    $data['phabricator.buildTargetPHID'] = $buildTargetPHID;
+    $data['phabricator.callsign'] = $repo->getCallsign();
+    $data['phabricator.diffID'] = $diff->getID();
+    $data['phabricator.revisionID'] = $revision->getID();
+    $data['phabricator.revisionURL'] = PhabricatorEnv::getProductionURI('/'.$revision->getMonogram());
 
     $property = id(new DifferentialDiffProperty())->loadOneWhere(
       'diffID = %d AND name = %s',
