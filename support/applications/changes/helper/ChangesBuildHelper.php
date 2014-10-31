@@ -68,7 +68,7 @@ final class ChangesBuildHelper {
     if ($status === 200) {
         return array(true, json_decode($body, true));
     }
-    return array(false, "$status: $body");
+    return array(false, "HTTP $status: $body");
   }
 
   private function formatAuthor($author) {
