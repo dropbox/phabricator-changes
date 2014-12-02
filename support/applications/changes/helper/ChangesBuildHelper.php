@@ -99,6 +99,7 @@ final class ChangesBuildHelper {
 
     $data['label'] = $revision->getTitle();
     $data['message'] = $revision->getSummary();
+    $data['tag'] = 'diff';
 
     $data['phabricator.buildTargetPHID'] = $buildTargetPHID;
     $data['phabricator.callsign'] = $repo->getCallsign();
