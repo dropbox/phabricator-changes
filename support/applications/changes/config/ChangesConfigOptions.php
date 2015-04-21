@@ -10,6 +10,10 @@ final class ChangesConfigOptions extends PhabricatorApplicationConfigOptions {
     return pht('Configure Changes builds.');
   }
 
+  public function getGroup() {
+    return 'apps';
+  }
+
   public function getOptions() {
     return array(
       $this->newOption(
