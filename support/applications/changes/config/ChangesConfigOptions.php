@@ -22,6 +22,12 @@ final class ChangesConfigOptions extends PhabricatorApplicationConfigOptions {
         '')
         ->setDescription(pht('URL to Changes build server.'))
         ->addExample('https://changes.example.com', 'Changes server'),
+      $this->newOption(
+        'changes.bot.username',
+        'string',
+        '')
+        ->setDescription(pht('Username of changesbot'))
+        ->addExample('changesbot', 'Username of changesbot'),
     );
   }
 
