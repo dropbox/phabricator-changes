@@ -29,7 +29,7 @@ class ChangesDiffRetryKeywordHandler extends ChangesKeywordHandler {
                     if ($count == 0) {
                         $comment = 'No builds restarted.';
                     } else {
-                        $names = [];
+                        $names = array();
                         foreach ($builds as $build) {
                             $names[] = $build['project']['name'];
                         }
@@ -46,7 +46,8 @@ class ChangesDiffRetryKeywordHandler extends ChangesKeywordHandler {
                     $comment = $dict['error'];
                 }
                 break;
-            case 52: // this is a curl error message for when there is no reply
+            case 7: // CURLE_COULDNT_CONNECT
+            case 52: // CURLE_GOT_NOTHING
                 $comment = 'Unable to connect to Changes to restart the builds.';
                 break;
             default:
@@ -61,7 +62,7 @@ class ChangesDiffRetryKeywordHandler extends ChangesKeywordHandler {
         if (!$user) {
             return;
         }
-        $xactions = [
+        $xactions = array(
             id(new DifferentialTransaction())
             ->setTransactionType(PhabricatorTransactions::TYPE_COMMENT)
             ->attachComment(
@@ -69,7 +70,7 @@ class ChangesDiffRetryKeywordHandler extends ChangesKeywordHandler {
                     ->setAuthorPHID($user->getPHID())
                     ->setRevisionPHID($storyObject->getPHID())
                     ->setContent($comment))
-            ];
+            );
         $revision = id(new DifferentialRevisionQuery())
             ->setViewer($user)
             ->withIDs(array($storyObject->getID()))

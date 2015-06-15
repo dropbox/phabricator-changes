@@ -17,7 +17,7 @@ final class DoorkeeperChangesFeedWorkerTestCase extends PhabricatorTestCase {
         $keywordHandler = new TestKeywordHandler();
         $worker = new DoorkeeperChangesTestFeedWorker(array());
         $worker->_comment = "This is the !magic comment";
-        $worker->_diffKeywordHandlers = [$keywordHandler];
+        $worker->_diffKeywordHandlers = array($keywordHandler);
         $worker->publish();
         $this->assertEqual(true, $keywordHandler->ran);
     }
@@ -25,7 +25,7 @@ final class DoorkeeperChangesFeedWorkerTestCase extends PhabricatorTestCase {
         $keywordHandler = new TestKeywordHandler();
         $worker = new DoorkeeperChangesTestFeedWorker(array());
         $worker->_comment = "This is the comment";
-        $worker->_diffKeywordHandlers = [$keywordHandler];
+        $worker->_diffKeywordHandlers = array($keywordHandler);
         $worker->publish();
         $this->assertEqual(false, $keywordHandler->ran);
     }
@@ -34,7 +34,7 @@ final class DoorkeeperChangesFeedWorkerTestCase extends PhabricatorTestCase {
         $keywordHandler->keyword = '/\s+/';
         $worker = new DoorkeeperChangesTestFeedWorker(array());
         $worker->_comment = "This is a comment";
-        $worker->_diffKeywordHandlers = [$keywordHandler];
+        $worker->_diffKeywordHandlers = array($keywordHandler);
         $worker->publish();
         $this->assertEqual(true, $keywordHandler->ran);
     }
@@ -43,7 +43,7 @@ final class DoorkeeperChangesFeedWorkerTestCase extends PhabricatorTestCase {
         $keywordHandler->keyword = '/\s+/';
         $worker = new DoorkeeperChangesTestFeedWorker(array());
         $worker->_comment = "Thisisacomment";
-        $worker->_diffKeywordHandlers = [$keywordHandler];
+        $worker->_diffKeywordHandlers = array($keywordHandler);
         $worker->publish();
         $this->assertEqual(false, $keywordHandler->ran);
     }
