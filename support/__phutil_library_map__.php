@@ -18,6 +18,7 @@ phutil_register_library_map(array(
     'DoorkeeperChangesFeedWorker' => 'applications/changes/doorkeeper/worker/DoorkeeperChangesFeedWorker.php',
     'DoorkeeperChangesFeedWorkerTestCase' => 'applications/changes/doorkeeper/worker/__tests__/DoorkeeperChangesFeedWorkerTestCase.php',
     'DoorkeeperChangesTestFeedWorker' => 'applications/changes/doorkeeper/worker/__tests__/DoorkeeperChangesTestFeedWorker.php',
+    'TestKeywordHandler' => 'applications/changes/doorkeeper/worker/__tests__/DoorkeeperChangesFeedWorkerTestCase.php',
   ),
   'function' => array(),
   'xmap' => array(
@@ -28,5 +29,6 @@ phutil_register_library_map(array(
     'DoorkeeperChangesFeedWorker' => 'DoorkeeperFeedWorker',
     'DoorkeeperChangesFeedWorkerTestCase' => 'PhabricatorTestCase',
     'DoorkeeperChangesTestFeedWorker' => 'DoorkeeperChangesFeedWorker',
+    'TestKeywordHandler' => 'ChangesKeywordHandler',
   ),
 ));
