@@ -5,6 +5,10 @@ class DoorkeeperChangesTestFeedWorker extends DoorkeeperChangesFeedWorker {
   public $_diffKeywordHandlers = null;
   public $_comment = null;
 
+  public function isEnabled() {
+      return false;
+  }
+
   /**
    * Add more handlers here
    */
