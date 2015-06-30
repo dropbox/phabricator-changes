@@ -3,7 +3,7 @@
 class ChangesDiffRetryKeywordHandler extends ChangesKeywordHandler {
 
     public function getKeyword() {
-        return "/!retry/";
+        return "/:retry/";
     }
 
     public function runOnObject($feedWorker, $storyObject, $viewer, $publisher) {
