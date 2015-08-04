@@ -1,5 +1,9 @@
 <?php
 
+/*
+ * Herald subscription that notifies changes when diffs are added or updated.
+ * This is not an ideal solution: see https://secure.phabricator.com/T5462.
+ */
 final class ChangesNotifyCustomAction extends HeraldCustomAction {
 
   public function appliesToAdapter(HeraldAdapter $adapter) {
