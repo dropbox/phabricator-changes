@@ -10,7 +10,6 @@ phutil_register_library_map(array(
   '__library_version__' => 2,
   'class' => array(
     'ChangesBuildHelper' => 'applications/changes/helper/ChangesBuildHelper.php',
-    'ChangesBuildStepImplementation' => 'applications/changes/step/ChangesBuildStepImplementation.php',
     'ChangesConfigOptions' => 'applications/changes/config/ChangesConfigOptions.php',
     'ChangesDiffRetryKeywordHandler' => 'applications/changes/keyword_handlers/ChangesDiffRetryKeywordHandler.php',
     'ChangesKeywordHandler' => 'applications/changes/keyword_handlers/ChangesKeywordHandler.php',
@@ -22,7 +21,6 @@ phutil_register_library_map(array(
   ),
   'function' => array(),
   'xmap' => array(
-    'ChangesBuildStepImplementation' => 'HarbormasterBuildStepImplementation',
     'ChangesConfigOptions' => 'PhabricatorApplicationConfigOptions',
     'ChangesDiffRetryKeywordHandler' => 'ChangesKeywordHandler',
     'ChangesNotifyCustomAction' => 'HeraldCustomAction',
