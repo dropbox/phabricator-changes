@@ -23,7 +23,7 @@ phutil_register_library_map(array(
   'xmap' => array(
     'ChangesConfigOptions' => 'PhabricatorApplicationConfigOptions',
     'ChangesDiffRetryKeywordHandler' => 'ChangesKeywordHandler',
-    'ChangesNotifyCustomAction' => 'HeraldCustomAction',
+    'ChangesNotifyCustomAction' => 'HeraldAction',
     'DoorkeeperChangesFeedWorker' => 'DoorkeeperFeedWorker',
     'DoorkeeperChangesFeedWorkerTestCase' => 'PhabricatorTestCase',
     'DoorkeeperChangesTestFeedWorker' => 'DoorkeeperChangesFeedWorker',
