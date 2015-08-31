@@ -86,7 +86,7 @@ final class ChangesNotifyCustomAction extends HeraldAction {
     $diff_id = $data['diff_id'];
     $api_result = $data['api_result'];
 
-    $prefix = "{$revision_id}:{$diff_id}";
+    $prefix = "D{$revision_id}:{$diff_id}";
 
     switch ($type) {
       case self::DO_CHANGES_BUILD:

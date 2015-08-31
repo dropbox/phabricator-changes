@@ -8,8 +8,9 @@ Setup
 -----
 
 1. Drop the code into phabricator/src/extensions/
-2. Configure Changes via http://phabricator.example.com/config/group/changesconfigoptions/
-3. Add a build step to fire off a Changes job.
+2. Add a symlink in webroot/rsrc/js to ./rsrc/js
+3. Configure Changes via http://phabricator.example.com/config/group/changesconfigoptions/
+4. Add a build step to fire off a Changes job.
 
 .. note:: Changes relies on the repository URL matching on both sides to determine which builds should fire.
 
