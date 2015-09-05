@@ -7,6 +7,21 @@ final class ChangesInlineController extends PhabricatorController {
     $revision_id = $request->getStr('revision_id');
     $diff_id = $request->getStr('diff_id');
 
+    $diff = id(new DifferentialDiffQuery())
+      ->setViewer($this->getViewer())
+      ->withIDs(array($diff_id))
+      ->executeOne();
+
+    if (!$diff) {
+      return id(new AphrontAjaxResponse())->setContent(
+        pht('Unable to load diff!'));
+    }
+
+    if ($diff->getCreationMethod() === 'commit') {
+      return id(new AphrontAjaxResponse())->setContent(
+        pht('Automatic diff as part of commit; N/A.'));
+    }
+
     // fetch build info from changes
 
     $future = id(new ChangesFuture())
