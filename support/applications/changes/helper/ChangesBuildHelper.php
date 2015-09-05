@@ -1,6 +1,35 @@
 <?php
 
 final class ChangesBuildHelper {
+
+  public function stringifyApiResult($success, $data) {
+    $revision_id = $data['revision_id'];
+    $diff_id = $data['diff_id'];
+    $api_result = $data['api_result'];
+
+    $prefix = "D{$revision_id}#{$diff_id}";
+    if ($success) {
+      $build_names = array();
+      foreach ($api_result as $build) {
+        $project = idx($build, 'project');
+        if ($project) {
+          $build_names[] = $project['name'];
+        }
+      }
+
+      return pht(
+        '%s: Started %s build(s): %s.',
+        $prefix,
+        new PhutilNumber(count($api_result)),
+        implode(', ', $build_names));
+    } else {
+      return pht(
+        '%s Failed to start build(s). %s.',
+        $prefix,
+        print_r($api_result, true));
+    }
+  }
+
   public function executeBuild($object, $build_target=null) {
     $changes_uri = PhabricatorEnv::getEnvConfigIfExists('changes.uri');
 

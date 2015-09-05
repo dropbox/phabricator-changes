@@ -28,5 +28,19 @@ JX.behavior('changes-inline', function(config) {
       ")");
   });
 
+  // power the expand on click herald link
+  JX.Stratcom.listen(
+    // for mobile support, can copy what behavior-toggle-class does
+    ['click'],
+    'changes-herald-link',
+    function(e) {
+      e.kill();
+
+      var t = e.getNodeData('changes-herald-link');
+      JX.DOM.hide(JX.$(t.myID));
+      JX.DOM.show(JX.$(t.heraldID));
+    }
+  );
+
   request.send();
 });

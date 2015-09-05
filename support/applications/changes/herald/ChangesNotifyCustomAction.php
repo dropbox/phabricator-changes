@@ -86,29 +86,12 @@ final class ChangesNotifyCustomAction extends HeraldAction {
     $diff_id = $data['diff_id'];
     $api_result = $data['api_result'];
 
-    $prefix = "D{$revision_id}:{$diff_id}";
-
+    $helper = new ChangesBuildHelper();
     switch ($type) {
       case self::DO_CHANGES_BUILD:
-        $build_names = array();
-        foreach ($api_result as $build) {
-          $project = idx($build, 'project');
-          if ($project) {
-            $build_names[] = $project['name'];
-          }
-        }
-
-        return pht(
-          '[%s] Started %s build(s): %s.',
-          $prefix,
-          new PhutilNumber(count($api_result)),
-          implode(', ', $build_names));
-
+        return $helper->stringifyApiResult(true, $data);
       case self::DO_CHANGES_BUILD_FAILED:
-        return pht(
-          '[%s] Failed to start build(s). %s.',
-          $prefix,
-          print_r($api_result, true));
+        return $helper->stringifyApiResult(false, $data);
     }
   }
 }

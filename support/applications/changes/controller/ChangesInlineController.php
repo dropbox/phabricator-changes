@@ -3,6 +3,16 @@
 final class ChangesInlineController extends PhabricatorController {
 
   public function processRequest() {
+    try {
+      return $this->processRequestImpl();
+    } catch (Exception $e) {
+      phlog($e);
+      return id(new AphrontAjaxResponse())->setContent(
+        pht('Error!'));
+    }
+  }
+
+  private function processRequestImpl() {
     $request = $this->getRequest();
     $revision_id = $request->getStr('revision_id');
     $diff_id = $request->getStr('diff_id');
@@ -12,9 +22,15 @@ final class ChangesInlineController extends PhabricatorController {
       ->withIDs(array($diff_id))
       ->executeOne();
 
-    if (!$diff) {
+
+    $revision = id(new DifferentialRevisionQuery())
+      ->setViewer($this->getViewer())
+      ->withIDs(array($revision_id))
+      ->executeOne();
+
+    if (!$diff || !$revision) {
       return id(new AphrontAjaxResponse())->setContent(
-        pht('Unable to load diff!'));
+        pht('Unable to load diff and revision!'));
     }
 
     if ($diff->getCreationMethod() === 'commit') {
@@ -23,7 +39,6 @@ final class ChangesInlineController extends PhabricatorController {
     }
 
     // fetch build info from changes
-
     $future = id(new ChangesFuture())
       ->setAPIPath('/api/0/phabricator/inline')
       ->setParams(array(
@@ -32,12 +47,121 @@ final class ChangesInlineController extends PhabricatorController {
       ));
 
     $api_data = $future->resolve();
-    $build_list = id(new PHUIStatusListView());
 
-    if (empty($api_data)) {
-      return id(new AphrontAjaxResponse())->setContent(
-        pht('No builds found'));
+    $changes_content = pht('No builds found');
+    if ($api_data) {
+      $changes_content = $this->getChangesBuildInfo($api_data, $revision_id);
     }
+
+    $herald_content = $this->getHeraldInfo($revision, $diff_id);
+
+    // replace with new content
+    return id(new AphrontAjaxResponse())->setContent(phutil_tag(
+      'div',
+      array(),
+      array(
+        $changes_content,
+        $herald_content,
+      )));
+  }
+
+  private function getHeraldInfo($revision, $diff_id) {
+    $helper = new ChangesBuildHelper();
+
+    // Transcripts are on revisions, not diffs. We record the diff id, though,
+    // and can filter it ourselves
+    $xscripts = id(new HeraldTranscriptQuery())
+      ->setViewer($this->getViewer())
+      ->withObjectPHIDs(array($revision->getPHID()))
+      ->execute();
+
+    if (!$xscripts) {
+      $xscripts = array();
+    }
+
+    $saw_too_old = false;
+    $saw_unknown = false;
+    $content = array();
+    foreach ($xscripts as $xscript) {
+      foreach ($xscript->getApplyTranscripts() as $apply_xscript) {
+        if ($apply_xscript->getAction() !== 'changes.build') {
+          continue;
+        }
+        $effect_data = $apply_xscript->getAppliedReason();
+
+        if ($effect_data === 'Create build in Changes') {
+          // old herald rule (pre 8/2015 push)
+          $saw_too_old = true;
+          continue;
+        } 
+        
+        if (!is_array($effect_data)) {
+          // no idea what data herald stored
+          $saw_unknown = true;
+          continue;
+        }
+
+        $data = $effect_data[0]['data'];
+
+        $text = $helper->stringifyApiResult(
+          $effect_data[0]['type'] === ChangesNotifyCustomAction::DO_CHANGES_BUILD,
+          $data);
+
+        $transcript_link = phutil_tag('a', 
+          array('href' => sprintf('/herald/transcript/%d', $xscript->getID())),
+          'full');
+        if ($data['diff_id'] === $diff_id) {
+          $content[] = phutil_tag('b', 
+            array(), 
+            array($text, ' (', $transcript_link, ')'));
+        } else {
+          $content[] = array($text, ' (', $transcript_link, ')');
+        }
+      }
+    }
+
+    if ($saw_too_old) {
+      $content = array('Revision too old to show');
+    } else if ($saw_unknown) {
+      $content = array('Unable to parse');
+    } else if (!$content) {
+      $content = array('Transcript not available (GCed?)');
+    }
+
+    // show relevant herald content
+    $herald_content = array();
+    foreach ($content as $c) {
+      $herald_content[] = phutil_tag('div', array(), $c);
+    }
+
+    // we want to show this on click
+    $show_link_id = celerity_generate_unique_node_id();
+    $herald_id = celerity_generate_unique_node_id();
+
+    $show_link = javelin_tag(
+      'a',
+      array(
+        'sigil' => 'changes-herald-link',
+        'id'    => $show_link_id,
+        'meta'  => array(
+          'myID' => $show_link_id,
+          'heraldID' => $herald_id,
+        ),
+      ),
+      pht('Show Herald Actions'));
+
+    return phutil_tag('div',
+      array(),
+      array(
+        $show_link,
+        phutil_tag('div',
+          array('id' => $herald_id, 'style' => 'display: none'),
+          $herald_content),
+      ));
+  }
+
+  private function getChangesBuildInfo($api_data, $revision_id) {
+    $build_list = id(new PHUIStatusListView());
 
     // we want the most recent build for each project, ordered alphabetically
     // by project name
@@ -137,6 +261,6 @@ final class ChangesInlineController extends PhabricatorController {
       $build_list->addItem($build_item);
     }
 
-    return id(new AphrontAjaxResponse())->setContent($build_list);
+    return $build_list;
   }
 }
