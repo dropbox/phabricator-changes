@@ -33,24 +33,24 @@ final class ChangesInlineController extends PhabricatorController {
         pht('Unable to load diff and revision!'));
     }
 
+    $changes_content = null;
     if ($diff->getCreationMethod() === 'commit') {
-      return id(new AphrontAjaxResponse())->setContent(
-        pht('Automatic diff as part of commit; N/A.'));
-    }
+      $changes_content = pht('Automatic diff as part of commit; N/A.');
+    } else {
+      // fetch build info from changes
+      $future = id(new ChangesFuture())
+        ->setAPIPath('/api/0/phabricator/inline')
+        ->setParams(array(
+          'revision_id' => $revision_id,
+          'diff_id' => $diff_id, 
+        ));
 
-    // fetch build info from changes
-    $future = id(new ChangesFuture())
-      ->setAPIPath('/api/0/phabricator/inline')
-      ->setParams(array(
-        'revision_id' => $revision_id,
-        'diff_id' => $diff_id, 
-      ));
+      $api_data = $future->resolve();
 
-    $api_data = $future->resolve();
-
-    $changes_content = pht('No builds found');
-    if ($api_data) {
-      $changes_content = $this->getChangesBuildInfo($api_data, $revision_id);
+      $changes_content = pht('No builds found');
+      if ($api_data) {
+        $changes_content = $this->getChangesBuildInfo($api_data, $revision_id);
+      }
     }
 
     $herald_content = $this->getHeraldInfo($revision, $diff_id);
