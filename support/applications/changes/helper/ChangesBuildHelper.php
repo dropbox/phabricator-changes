@@ -97,6 +97,10 @@ final class ChangesBuildHelper {
     if ($status === 200) {
         return array(true, json_decode($body, true));
     }
+    if ($status === 0) {
+        $error = curl_error($curl);
+        return array(false, "curl error: $error");
+    }
     return array(false, "HTTP $status: $body");
   }
 

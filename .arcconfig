@@ -4,6 +4,6 @@
   "copyright_holder" : "Dropbox",
   "project.name": "phabricator-changes",
   "unit.engine": "PhutilUnitTestEngine",
-  "load": ["support/", "../phabricator/src/", "../libphutil/src/", "../arcanist/src/"],
+  "load": ["support/", "../phabricator/src/"],
   "base": "arc:amended, arc:upstream, git:merge-base(origin/master), arc:prompt"
 }
