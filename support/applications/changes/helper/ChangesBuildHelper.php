@@ -156,16 +156,25 @@ final class ChangesBuildHelper {
       return array(false, 'Unable to detect parent revision');
     }
 
-    $data['patch'] = $this->buildRawDiff($diff);
-
     // fetch author from revision as diff may not match what we
     // expect
     $author = id(new PhabricatorPeopleQuery())
       ->setViewer(PhabricatorUser::getOmnipotentUser())
       ->withPHIDs(array($revision->getAuthorPHID()))
       ->executeOne();
-
     $data['author'] = $this->formatAuthor($author);
+
+    // If any field starts with an '@', insert a space at the beginning, to
+    // avoid curl interpreting it as a filename to fetch actual data from.
+    // This is an atrocious hack, and we should get rid of it once we're on a
+    // version of PHP that supports CURLFile.
+    foreach ($data as $k => $v) {
+      if (strncmp($v, '@', 1) == 0) {
+          $data[$k] = ' '.$v;
+      }
+    }
+
+    $data['patch'] = $this->buildRawDiff($diff);
 
     return array(true, $data);
   }
