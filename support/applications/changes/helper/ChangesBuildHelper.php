@@ -318,12 +318,12 @@ final class ChangesBuildHelper {
         'local:commits');
 
     // Look for a set of local commits where the most recent one is the proposed sha
-    foreach ($potential_diffs as $potential_diff_id => $potential_diff) {
+    foreach ($potential_diffs as $potential_diff) {
       $local_commits_for_diff = $potential_diff->getData();
       usort($local_commits_for_diff, array($this, 'compareCommitsByTime'));
       $most_recent_commit = $local_commits_for_diff[count($local_commits_for_diff) - 1];
       if ($most_recent_commit['commit'] == $proposed_sha) {
-        return array($potential_diff_id, $local_commits_for_diff[0]['parents'][0]);
+        return array($potential_diff->getDiffID(), $local_commits_for_diff[0]['parents'][0]);
       }
     }
 
