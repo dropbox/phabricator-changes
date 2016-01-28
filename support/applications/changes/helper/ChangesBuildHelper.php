@@ -140,20 +140,12 @@ final class ChangesBuildHelper {
     $data['phabricator.revisionID'] = $revision->getID();
     $data['phabricator.revisionURL'] = PhabricatorEnv::getProductionURI('/'.$revision->getMonogram());
 
-    $property = id(new DifferentialDiffProperty())->loadOneWhere(
-      'diffID = %d AND name = %s',
-      $diff->getID(),
-      'local:commits');
-
-    if ($property) {
-      $local_commits = $property->getData();
-
-      usort($local_commits, array($this, 'compareCommitsByTime'));
-
-      $data['sha'] = $local_commits[0]['parents'][0];
+    list($success, $change_info) = $this->buildChangeInformation($diff, $repo);
+    if (!$success) {
+      // $changeInfo will be a string with an error message.
+      return array(false, $change_info);
     } else {
-      // No sha so we don't know what to build it against
-      return array(false, 'Unable to detect parent revision');
+      list($data['sha'], $data['patch']) = $change_info;
     }
 
     // fetch author from revision as diff may not match what we
@@ -173,8 +165,6 @@ final class ChangesBuildHelper {
           $data[$k] = ' '.$v;
       }
     }
-
-    $data['patch'] = $this->buildRawDiff($diff);
 
     return array(true, $data);
   }
@@ -196,16 +186,173 @@ final class ChangesBuildHelper {
     return $file->loadFileData();
   }
 
-  private function buildRawDiff($diff){
-    $user = PhabricatorUser::getOmnipotentUser();
+  /**
+   * Generates the base commit hash and patch on it which can be used by Changes to reconstruct the diff.
+   * If successful, will return an array of (true, (commit_hash, patch)) where the commit_hash is for a commit
+   * that is landed into diffusion. If it fails, this will return an array of (false, explanation) where explanation
+   * is a string describing why it failed.
+   */
+  private function buildChangeInformation($diff, $repo) {
+    // Find the closest revision that is landed. We traverse up the (possible) set of parent diffs via
+    // the following loop:
+    // - Find the sha that is parent to the first commit.
+    // - If that sha exists in diffusion (eg is landed), we're good to go, use that one as our base.
+    // - If that sha has a differential diff attached to it, add that diff to our list of diffs and
+    //   repeat the process with that one.
+    // - If there is no diff and landed commit, fail.
 
-    return id(new ConduitCall(
-      'differential.getrawdiff',
-      array(
-        'diffID' => $diff->getID(),
-      )
-    ))
-    ->setUser($user)
-    ->execute();
+    // Some notes on Phabricator's naming schemes and data organization:
+    // There is a distinction between a "diff" and a "revision". A "revision" is a logical change that you might link
+    // to (eg DXXXX), and a "diff" is a single update posted to the revision. When you look at a revision, there's a
+    // "Revision Update History" section that lists all of the diffs and their IDs. Each diff has a series of "local
+    // commits" which have hashes for the commit and the tree associated with them, but the actual diff content is just
+    // a patch file. The commits aren't actually upload or accessible individually. These hashes (both for commit and
+    // for tree) are cached on the revision for quick access. Therefore if we want to find a diff that contains a commit
+    // with a given commit hash, we have to first look at all revisions that contain that hash, then look at all of the
+    // diffs on those revisions. This is what we end up doing in getDiffIdAndBaseSha.
+
+    // This is the closest sha that is landed in diffusion.
+    $sha = null;
+    // This is the list of diffs that we end up traversing to get back to a sha that's landed in diffusion. We'll use
+    // this list to build up the patch file.
+    $diff_ids_traversed = array($diff->getID());
+    // This is the sha that is a candidate for use as the $sha variable. We handle the first diff separately because
+    // we know for sure which diff we're working with. If we need to go to a parent revision, we'll have to loop through
+    // to find the appropriate diff, which is done by the getDiffIdAndBaseSha function.
+    $proposed_sha = $this->getParentShaForInitialDiff($diff);
+
+    while (!$sha) {
+      // Determine if the proposed sha is landed in diffusion
+      if ($this->isShaLanded($repo, $proposed_sha)) {
+        // Set the sha and exit the loop
+        $sha = $proposed_sha;
+      } else {
+        // Find a diff where the last local commit is the sha we're looking for.
+        $diff_id_and_base_sha = $this->getDiffIdAndBaseSha($repo, $proposed_sha);
+        if ($diff_id_and_base_sha == null) {
+          return array(false, "Couldn't find an in progress diff with the necessary last commit");
+        }
+
+        // Update the sha we're looking for and try again.
+        list($new_diff_id, $proposed_sha) = $diff_id_and_base_sha;
+        array_push($diff_ids_traversed, $new_diff_id);
+      }
+    }
+
+    // We've either encountered an error state by now and returned, or we've found a valid sha hash. We can go
+    // ahead and build the patch out of the diffs we traversed.
+    $patch = $this->buildRawDiff($diff_ids_traversed);
+
+    // Finally return valid data.
+    return array(true, array($sha, $patch));
+  }
+
+  /**
+   * Given a diff, returns the parent sha of the first local commit in the diff.
+   */
+  private function getParentShaForInitialDiff($diff) {
+    $property = id(new DifferentialDiffProperty())->loadOneWhere(
+        'diffID = %d AND name = %s',
+        $diff->getID(),
+        'local:commits');
+
+    if (!$property) {
+      // No sha so we don't know what to build it against
+      return array(false, 'Unable to detect parent revision');
+    }
+
+    $local_commits_for_diff = $property->getData();
+    usort($local_commits_for_diff, array($this, 'compareCommitsByTime'));
+    return $local_commits_for_diff[0]['parents'][0];
+  }
+
+  /**
+   * Returns whether a sha exists in diffusion.
+   */
+  private function isShaLanded($repo, $proposed_sha) {
+    return $this->conduit('diffusion.existsquery',
+        array(
+            'commit' => $proposed_sha,
+            'callsign' => $repo->getCallsign(),
+        ));
+  }
+
+  /**
+   * Given a sha, looks for a diff where the most recent local commit is the proposed hash. If one is found, returns
+   * an array of (diff_id, base_sha) where diff_id is the id of the found diff and base_sha is the sha hash that the
+   * diff is based on (similar to what getParentShaForInitialDiff() returns). If multiple matching diffs are found, an
+   * arbitrary one will be chosen. If no such diff is found, this will return null.
+   */
+  private function getDiffIdAndBaseSha($repo, $proposed_sha) {
+    // This function has 3 major steps to it:
+    // 1. Find the revisions that contain the given sha
+    // 2. Get the local commits for each of the diffs that those revisions contain
+    // 3. Look for a set of local commits where the most recent one is the proposed sha
+
+    // Find the revisions that contain the given sha
+    if ($repo->getVersionControlSystem() == 'git') {
+      $sha_type = 'gtcm';
+    } else if ($repo->getVersionControlSystem() == 'hg') {
+      $sha_type = 'hgcm';
+    } else {
+      // Unknown version control type, bail early.
+      return null;
+    }
+    $parent_revisions = $this->conduit('differential.query',
+        array(
+            'commitHashes' => array(array($sha_type, $proposed_sha)),
+        ));
+    if (!$parent_revisions) {
+      // No revisions contain the sha
+      return null;
+    }
+
+    // Get the local commits for each of the diffs that those revisions contain
+    $potential_diff_ids = array();
+    foreach ($parent_revisions as $parent_revision) {
+      $potential_diff_ids = array_merge($potential_diff_ids, $parent_revision['diffs']);
+    }
+    $potential_diffs = id(new DifferentialDiffProperty())->loadAllWhere(
+        'diffID IN (%Ld) AND name = %s',
+        $potential_diff_ids,
+        'local:commits');
+
+    // Look for a set of local commits where the most recent one is the proposed sha
+    foreach ($potential_diffs as $potential_diff_id => $potential_diff) {
+      $local_commits_for_diff = $potential_diff->getData();
+      usort($local_commits_for_diff, array($this, 'compareCommitsByTime'));
+      $most_recent_commit = $local_commits_for_diff[count($local_commits_for_diff) - 1];
+      if ($most_recent_commit['commit'] == $proposed_sha) {
+        return array($potential_diff_id, $local_commits_for_diff[0]['parents'][0]);
+      }
+    }
+
+    // Didn't find any matching set of commits
+    return null;
+  }
+
+  /**
+   * Given an array of diff ids, returns a string that represents the aggregate patch that can be used
+   * to apply/recreate all of the diffs. The diffs should be ordered from newest to oldest.
+   */
+  private function buildRawDiff($diff_ids_traversed) {
+    $patch = '';
+    foreach ($diff_ids_traversed as $diff_id) {
+      $patch = $this->conduit(
+          'differential.getrawdiff',
+          array(
+              'diffID' => $diff_id,
+          )).$patch; // Note: the dot is string concatenation. Lint complains if you put spaces around it.
+    }
+    return $patch;
+  }
+
+  /**
+   * Helper to access Conduit endpoints.
+   */
+  private function conduit($method, $args) {
+    return id(new ConduitCall($method, $args))
+        ->setUser(PhabricatorUser::getOmnipotentUser())
+        ->execute();
   }
 }
