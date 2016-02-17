@@ -142,10 +142,10 @@ final class ChangesBuildHelper {
 
     list($success, $change_info) = $this->buildChangeInformation($diff, $repo);
     if (!$success) {
-      // $changeInfo will be a string with an error message.
+      // $change_info will be a string with an error message.
       return array(false, $change_info);
     } else {
-      list($data['sha'], $data['patch']) = $change_info;
+      list($data['sha'], $data['patch'], $data['phabricator.revisionIDList']) = $change_info;
     }
 
     // fetch author from revision as diff may not match what we
@@ -239,12 +239,15 @@ final class ChangesBuildHelper {
       }
     }
 
+    // The diffs were from newest (most recent) to oldest (closest to master). For patching, we want
+    // to go the other way.
+    $diff_ids_traversed = array_reverse($diff_ids_traversed);
     // We've either encountered an error state by now and returned, or we've found a valid sha hash. We can go
     // ahead and build the patch out of the diffs we traversed.
     $patch = $this->buildRawDiff($diff_ids_traversed);
 
     // Finally return valid data.
-    return array(true, array($sha, $patch));
+    return array(true, array($sha, $patch, $diff_ids_traversed));
   }
 
   /**
@@ -333,16 +336,17 @@ final class ChangesBuildHelper {
 
   /**
    * Given an array of diff ids, returns a string that represents the aggregate patch that can be used
-   * to apply/recreate all of the diffs. The diffs should be ordered from newest to oldest.
+   * to apply/recreate all of the diffs. The diffs should be ordered from oldest to newest.
    */
   private function buildRawDiff($diff_ids_traversed) {
     $patch = '';
     foreach ($diff_ids_traversed as $diff_id) {
-      $patch = $this->conduit(
+      // Note: the dot is string concatenation to the end.
+      $patch .= $this->conduit(
           'differential.getrawdiff',
           array(
               'diffID' => $diff_id,
-          )).$patch; // Note: the dot is string concatenation. Lint complains if you put spaces around it.
+          ));
     }
     return $patch;
   }
