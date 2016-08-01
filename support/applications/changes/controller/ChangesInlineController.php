@@ -196,8 +196,9 @@ final class ChangesInlineController extends PhabricatorController {
         idx($build, 'project', array()),
         'name');
 
+      $build_uri = idx($build, 'link', '');
       $changes_href = PhabricatorEnv::getEnvConfigIfExists('changes.uri');
-      if ($changes_href) {
+      if ($build_uri) {
         $project_uri = id(new PhutilURI($changes_href))
           ->setPath("v2/diff/D{$revision_id}/")
           ->setQueryParam('buildID', idx($build, 'id'));
@@ -205,7 +206,7 @@ final class ChangesInlineController extends PhabricatorController {
         $project_name = phutil_tag(
           'a',
           array( 
-            'href' => $project_uri,
+            'href' => $build_uri,
           ),
           $project_name);
       }
