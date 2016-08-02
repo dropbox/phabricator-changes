@@ -3,7 +3,9 @@
 class DoorkeeperChangesFeedWorker extends DoorkeeperFeedWorker {
 /* -(  Publishing Stories  )------------------------------------------------- */
   public function isEnabled() {
-      return true;
+      // Disabled for now because it retries indefinitely.
+      return false;
+      //return true;
   }
 
   private $_diffKeywordHandlers = null;
