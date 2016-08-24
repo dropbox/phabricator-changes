@@ -302,7 +302,7 @@ final class ChangesBuildHelper {
     foreach ($potential_diffs as $potential_diff) {
       $local_commits_for_diff = $potential_diff['properties']['local:commits'];
       // Local commits are ordered from HEAD to base
-      $most_recent_commit = $local_commits_for_diff[0];
+      $most_recent_commit = reset($local_commits_for_diff);
       if ($most_recent_commit['commit'] == $proposed_sha) {
         $diff_id = $potential_diff['id'];
         $base_sha = $potential_diff['sourceControlBaseRevision'];
