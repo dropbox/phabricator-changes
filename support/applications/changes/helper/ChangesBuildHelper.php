@@ -169,13 +169,6 @@ final class ChangesBuildHelper {
     return array(true, $data);
   }
 
-  private function compareCommitsByTime($a, $b) {
-    if ($a['time'] == $b['time']) {
-      return 0;
-    }
-    return ($a['time'] < $b['time'] ? -1 : 1);
-  }
-
   private function loadFileByPHID($phid) {
     $file = id(new PhabricatorFile())->loadOneWhere(
       'phid = %s',
@@ -195,7 +188,7 @@ final class ChangesBuildHelper {
   private function buildChangeInformation($diff, $repo) {
     // Find the closest revision that is landed. We traverse up the (possible) set of parent diffs via
     // the following loop:
-    // - Find the sha that is parent to the first commit.
+    // - Find the sha for the "base revision" that Phabricator has identified.
     // - If that sha exists in diffusion (eg is landed), we're good to go, use that one as our base.
     // - If that sha has a differential diff attached to it, add that diff to our list of diffs and
     //   repeat the process with that one.
@@ -254,19 +247,7 @@ final class ChangesBuildHelper {
    * Given a diff, returns the parent sha of the first local commit in the diff.
    */
   private function getParentShaForInitialDiff($diff) {
-    $property = id(new DifferentialDiffProperty())->loadOneWhere(
-        'diffID = %d AND name = %s',
-        $diff->getID(),
-        'local:commits');
-
-    if (!$property) {
-      // No sha so we don't know what to build it against
-      return array(false, 'Unable to detect parent revision');
-    }
-
-    $local_commits_for_diff = $property->getData();
-    usort($local_commits_for_diff, array($this, 'compareCommitsByTime'));
-    return $local_commits_for_diff[0]['parents'][0];
+    return $diff->getSourceControlBaseRevision();
   }
 
   /**
@@ -311,22 +292,21 @@ final class ChangesBuildHelper {
     }
 
     // Get the local commits for each of the diffs that those revisions contain
-    $potential_diff_ids = array();
-    foreach ($parent_revisions as $parent_revision) {
-      $potential_diff_ids = array_merge($potential_diff_ids, $parent_revision['diffs']);
-    }
-    $potential_diffs = id(new DifferentialDiffProperty())->loadAllWhere(
-        'diffID IN (%Ld) AND name = %s',
-        $potential_diff_ids,
-        'local:commits');
-
+    $get_id = function($rev) { return $rev['id']; };
+    $potential_revision_ids = array_map($get_id, $parent_revisions);
+    $potential_diffs = $this->conduit('differential.querydiffs',
+        array(
+            'revisionIDs' => $potential_revision_ids,
+        ));
     // Look for a set of local commits where the most recent one is the proposed sha
     foreach ($potential_diffs as $potential_diff) {
-      $local_commits_for_diff = $potential_diff->getData();
-      usort($local_commits_for_diff, array($this, 'compareCommitsByTime'));
-      $most_recent_commit = $local_commits_for_diff[count($local_commits_for_diff) - 1];
+      $local_commits_for_diff = $potential_diff['properties']['local:commits'];
+      // Local commits are ordered from HEAD to base
+      $most_recent_commit = $local_commits_for_diff[0];
       if ($most_recent_commit['commit'] == $proposed_sha) {
-        return array($potential_diff->getDiffID(), $local_commits_for_diff[0]['parents'][0]);
+        $diff_id = $potential_diff['id'];
+        $base_sha = $potential_diff['sourceControlBaseRevision'];
+        return array($diff_id, $base_sha);
       }
     }
 
