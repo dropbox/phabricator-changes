@@ -2,6 +2,12 @@
 
 final class ChangesBuildHelper {
 
+  private $user;
+
+  public function setUser($user) {
+    $this->user = $user;
+  }
+
   public function stringifyApiResult($success, $data) {
     $revision_id = $data['revision_id'];
     $diff_id = $data['diff_id'];
@@ -347,7 +353,7 @@ final class ChangesBuildHelper {
    */
   private function conduit($method, $args) {
     return id(new ConduitCall($method, $args))
-        ->setUser(PhabricatorUser::getOmnipotentUser())
+        ->setUser($this->user)
         ->execute();
   }
 }

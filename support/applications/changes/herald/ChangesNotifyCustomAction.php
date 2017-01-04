@@ -51,6 +51,12 @@ final class ChangesNotifyCustomAction extends HeraldAction {
     $diff->attachRevision($revision);
 
     $helper = new ChangesBuildHelper();
+
+    $author = id(new PhabricatorUser())->loadOneWhere(
+      'phid = %s',
+      $diff->getAuthorPHID());
+    $helper->setUser($author);
+
     list($success, $result) = $helper->executeBuild($diff);
 
     $success_effect = $success ? 
