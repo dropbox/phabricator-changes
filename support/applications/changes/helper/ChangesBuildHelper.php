@@ -32,9 +32,16 @@ final class ChangesBuildHelper {
 
   public function executeBuild($object, $build_target=null) {
     $changes_uri = PhabricatorEnv::getEnvConfigIfExists('changes.uri');
+    $changes_auth_header_name = PhabricatorEnv::getEnvConfigIfExists('changes.auth.header-name');
+    $changes_auth_header_value = PhabricatorEnv::getEnvConfigIfExists('changes.auth.header-value');
 
     if (!$changes_uri) {
       return array(false, 'Missing changes.uri setting');
+    }
+
+    $headers = array();
+    if ($changes_auth_header_name && $changes_auth_header_value) {
+        array_push($headers, "$changes_auth_header_name: $changes_auth_header_value");
     }
 
     $uri = sprintf('%s/api/0/phabricator/notify-diff/', rtrim($changes_uri, '/'));
@@ -61,7 +68,7 @@ final class ChangesBuildHelper {
         $data['patch'] = '@'.$patch_file;
       }
 
-      list($success, $result) = $this->sendBuildToChanges($uri, $data);
+      list($success, $result) = $this->sendBuildToChanges($uri, $data, $headers);
     } catch (Exception $ex) {
       if ($data['patch']) {
         unlink($patch_file);
@@ -76,12 +83,16 @@ final class ChangesBuildHelper {
     return array($success, $result);
   }
 
-  private function sendBuildToChanges($uri, $data) {
+  private function sendBuildToChanges($uri, $data, array &$headers) {
     // The HTTPSFuture implementation in libphutil does not support file uploads, so we
     // attempt to reconstruct the important bits here
     $curl = curl_init();
 
     $allowed_protocols = CURLPROTO_HTTPS | CURLPROTO_HTTP;
+
+    if ($headers) {
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+    }
 
     curl_setopt($curl, CURLOPT_PROTOCOLS, $allowed_protocols);
     curl_setopt($curl, CURLOPT_URL, $uri);

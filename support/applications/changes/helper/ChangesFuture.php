@@ -25,6 +25,8 @@ final class ChangesFuture extends FutureProxy {
 
   protected function getProxiedFuture() {
     $changes_uri = PhabricatorEnv::getEnvConfigIfExists('changes.uri');
+    $changes_auth_header_name = PhabricatorEnv::getEnvConfigIfExists('changes.auth.header-name');
+    $changes_auth_header_value = PhabricatorEnv::getEnvConfigIfExists('changes.auth.header-value');
 
     if (!$changes_uri) {
       return array(false, 'Missing changes.uri setting');
@@ -39,6 +41,9 @@ final class ChangesFuture extends FutureProxy {
 
       $future = new HTTPSFuture($uri);
       $future->setMethod($this->method);
+      if ($changes_auth_header_name && $changes_auth_header_value) {
+        $future->addHeader($changes_auth_header_name, $changes_auth_header_value);
+      }
 
       $this->future = $future;
     }
