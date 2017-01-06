@@ -71,7 +71,11 @@ final class ChangesBuildHelper {
         fwrite($fp, $data['patch']);
         fclose($fp);
 
-        $data['patch'] = '@'.$patch_file;
+        if (function_exists('curl_file_create')) {
+          $data['patch'] = curl_file_create($patch_file);
+        } else {
+          $data['patch'] = '@'.$patch_file;
+        }
       }
 
       list($success, $result) = $this->sendBuildToChanges($uri, $data, $headers);
